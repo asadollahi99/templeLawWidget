@@ -1,0 +1,410 @@
+:root {
+    --bg: #f6f7fb;
+    --border: #e8eaf0;
+    --text: #1f2430;
+    --muted: #6b7280;
+    --brand: #8a0000;
+    /* Temple cherry-ish */
+    --me: #e7f0ff;
+    --bot: #ffffff;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+/* full-height canvas */
+html,
+body,
+#root {
+    height: 100%;
+}
+
+/* center the widget in the middle of the page */
+/* src/chat.css */
+
+/* full-height canvas */
+html,
+body,
+#root {
+    height: 100%;
+}
+
+/* PERFECT CENTERING */
+.page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    /* vertical center */
+    justify-content: center;
+    /* horizontal center */
+    background: #f9fafb;
+    /* optional page bg */
+    padding: 24px;
+    /* breathing room on small screens */
+}
+
+/* chat card */
+.wrap {
+    width: min(820px, 94vw);
+    margin: 0 auto;
+}
+
+/* header: simple text, no dot */
+.brand {
+    font-weight: 700;
+}
+
+.dot {
+    display: none !important;
+}
+
+/* just in case */
+
+/* make the chat area height relative to viewport so it fits nicely */
+.log {
+    height: min(64vh, 560px);
+}
+
+/* on short screens, avoid awkward vertical centering */
+@media (max-height: 700px) {
+    .page {
+        align-items: flex-start;
+    }
+
+    .wrap {
+        margin-top: 16px;
+    }
+}
+
+body {
+    margin: 0;
+    font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    color: var(--text);
+    background: #fff;
+}
+
+.wrap {
+    max-width: 760px;
+    margin: 12px auto;
+    padding: 12px;
+}
+
+.hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 4px 0 10px;
+}
+
+.brand {
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    background: var(--brand);
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.btn {
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background: #fafafa;
+}
+
+.btn.primary {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: #fff;
+}
+
+.btn.primary:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+.log {
+    height: 480px;
+    overflow: auto;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px;
+}
+
+.empty {
+    color: var(--muted);
+    text-align: center;
+    margin-top: 140px;
+}
+
+.bubble {
+    padding: 10px 12px;
+    border-radius: 12px;
+    margin: 8px 0;
+    position: relative;
+    max-width: 80%;
+}
+
+.me {
+    background: var(--me);
+    margin-left: auto;
+}
+
+.bot {
+    background: var(--bot);
+    border: 1px solid var(--border);
+}
+
+.meta {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+}
+
+.src {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.src a {
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: #fff;
+    text-decoration: none;
+    color: #334155;
+}
+
+.inp {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.inp textarea {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    resize: none;
+    max-height: 140px;
+}
+
+/* typing dots */
+.dots {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    height: 16px;
+}
+
+.dots span {
+    width: 6px;
+    height: 6px;
+    background: #9aa3b2;
+    border-radius: 50%;
+    display: inline-block;
+    animation: blink 1.3s infinite ease-in-out;
+}
+
+.dots span:nth-child(2) {
+    animation-delay: .15s
+}
+
+.dots span:nth-child(3) {
+    animation-delay: .3s
+}
+
+/* header right side */
+.hdr-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* modal */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .38);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 50;
+}
+
+.modal {
+    width: min(800px, 95vw);
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .15);
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+}
+
+.modal-hdr {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-hdr .gap {
+    flex: 1;
+}
+
+.modal-body {
+    padding: 12px;
+    overflow: auto;
+}
+
+.hist-row {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    gap: 10px;
+    align-items: start;
+    padding: 8px 0;
+    border-bottom: 1px solid #f2f3f6;
+}
+
+.hist-row .role {
+    font-weight: 600;
+    text-transform: capitalize;
+    color: #374151;
+}
+
+.hist-row.user .role {
+    color: #1d4ed8;
+}
+
+.hist-row.assistant .role {
+    color: #7c2d12;
+}
+
+.hist-row .text {
+    white-space: pre-wrap;
+}
+
+.hist-row .time {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.muted {
+    color: var(--muted);
+}
+
+/* header right side */
+.hdr-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* modal */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .38);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 50;
+}
+
+.modal {
+    width: min(800px, 95vw);
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .15);
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+}
+
+.modal-hdr {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-hdr .gap {
+    flex: 1;
+}
+
+.modal-body {
+    padding: 12px;
+    overflow: auto;
+}
+
+.hist-row {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    gap: 10px;
+    align-items: start;
+    padding: 8px 0;
+    border-bottom: 1px solid #f2f3f6;
+}
+
+.hist-row .role {
+    font-weight: 600;
+    text-transform: capitalize;
+    color: #374151;
+}
+
+.hist-row.user .role {
+    color: #1d4ed8;
+}
+
+.hist-row.assistant .role {
+    color: #7c2d12;
+}
+
+.hist-row .text {
+    white-space: pre-wrap;
+}
+
+.hist-row .time {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.muted {
+    color: var(--muted);
+}
+
+@keyframes blink {
+
+    0%,
+    60%,
+    100% {
+        opacity: .2
+    }
+
+    30% {
+        opacity: 1
+    }
+}
