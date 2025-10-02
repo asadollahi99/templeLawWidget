@@ -2,7 +2,8 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig(({ mode }) => ({
-  base: mode === "production" ? "/ctlaw/" : "/",   // dev => '/', prod => '/ctlaw/'
+  //base: mode === "production" ? "/ctlaw/" : "/",   // dev => '/', prod => '/ctlaw/'
+  base: "/",
   plugins: [react()],
   build: { outDir: "dist" },
   server: {
