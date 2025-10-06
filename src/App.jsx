@@ -138,12 +138,14 @@ export default function App() {
             </div>
           ))}
           {busy && (
-            <div className="bubble bot">
-              <div >
+            <div className="bubble bot typing">
+              <div className="typing-dots">
                 <span></span><span></span><span></span>
               </div>
             </div>
           )}
+
+
         </main>
 
         <footer className="inp">

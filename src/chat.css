@@ -396,6 +396,42 @@ body {
     color: var(--muted);
 }
 
+/* Typing dots animation */
+.bubble.bot>div {
+    display: inline-block;
+}
+
+.bubble.bot>div span {
+    display: inline-block;
+    font-size: 22px;
+    line-height: 1;
+    margin: 0 2px;
+    animation: blink 1.4s infinite both;
+    opacity: 0.2;
+}
+
+.bubble.bot>div span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.bubble.bot>div span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes blink {
+    0% {
+        opacity: 0.2;
+    }
+
+    20% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.2;
+    }
+}
+
 @keyframes blink {
 
     0%,
@@ -406,5 +442,52 @@ body {
 
     30% {
         opacity: 1
+    }
+}
+
+/* ----------------------------------------
+   Typing dots animation for assistant
+----------------------------------------- */
+.typing-dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    height: 20px;
+}
+
+.typing-dots span {
+    width: 8px;
+    height: 8px;
+    background-color: #555;
+    border-radius: 50%;
+    opacity: 0.3;
+    animation: dotBlink 1.4s infinite ease-in-out both;
+}
+
+.typing-dots span:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.typing-dots span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-dots span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes dotBlink {
+
+    0%,
+    80%,
+    100% {
+        opacity: 0.3;
+        transform: scale(1);
+    }
+
+    40% {
+        opacity: 1;
+        transform: scale(1.3);
     }
 }
