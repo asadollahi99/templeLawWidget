@@ -34,8 +34,8 @@ export default function App() {
   const [showHist, setShowHist] = useState(false);
   const [histItems, setHistItems] = useState([]);
 
-  const add = (role, content, sources = []) => {
-    setMsgs(m => [...m, { role, content, sources, ts: new Date() }]);
+  const add = (role, content, sources = [], mid = null) => {
+    setMsgs(m => [...m, { mid, role, content, sources, ts: new Date() }]);
   };
 
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function App() {
         setSid(j.sid);
         localStorage.setItem("tlc_sid", j.sid);
       }
-      add("assistant", j.answer || (j.error ? `Error: ${j.error}` : "No answer"), j.sources || []);
+      add("assistant", j.answer || (j.error ? `Error: ${j.error}` : "No answer"), j.sources || [], j.mid);
     } catch (e) {
       add("assistant", `Error: ${e.message}`);
     } finally {
@@ -110,6 +110,26 @@ export default function App() {
     setMsgs([]);
     add("assistant", "Conversation reset.");
   };
+  const saveFeedback = async (index, correct, comment) => {
+    if (!sid) return;
+    const newMsgs = [...msgs];
+    newMsgs[index] = {
+      ...newMsgs[index],
+      feedback: { correct, comment },
+    };
+    setMsgs(newMsgs);
+
+    try {
+      await fetch(`${API_BASE}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sid, mid: msgs[index].mid, correct, comment })
+      });
+
+    } catch (e) {
+      console.error("Feedback save failed:", e.message);
+    }
+  };
 
   return (
     <div className="page">
@@ -134,9 +154,127 @@ export default function App() {
               <div className="meta">
                 {m.ts?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </div>
-              {m.role === "assistant" && <SourceChips sources={m.sources} />}
+
+              {m.role === "assistant" && (
+                <div style={{ marginTop: 8 }}>
+                  <SourceChips sources={m.sources} />
+
+                  {/* Feedback UI */}
+                  <div
+                    style={{
+                      marginTop: 10,
+                      background: "#f8f9fb",
+                      border: "1px solid #e2e6ee",
+                      borderRadius: 8,
+                      padding: 10,
+                    }}
+                  >
+                    <div style={{ marginBottom: 6, fontWeight: 500 }}>Feedback</div>
+                    <label style={{ marginRight: 10 }}>
+                      <input
+                        type="radio"
+                        name={`fb-${i}`}
+                        checked={m.feedback?.correct === true}
+                        onChange={() => {
+                          const newMsgs = [...msgs];
+                          newMsgs[i].feedback = {
+                            ...(newMsgs[i].feedback || {}),
+                            correct: true,
+                          };
+                          setMsgs(newMsgs);
+                        }}
+                      />{" "}
+                      Correct
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name={`fb-${i}`}
+                        checked={m.feedback?.correct === false}
+                        onChange={() => {
+                          const newMsgs = [...msgs];
+                          newMsgs[i].feedback = {
+                            ...(newMsgs[i].feedback || {}),
+                            correct: false,
+                          };
+                          setMsgs(newMsgs);
+                        }}
+                      />{" "}
+                      Incorrect
+                    </label>
+
+                    <textarea
+                      placeholder="Write comment..."
+                      rows={2}
+                      style={{
+                        width: "100%",
+                        marginTop: 8,
+                        resize: "vertical",
+                        fontSize: 13,
+                        padding: 6,
+                      }}
+                      value={m.feedback?.comment || ""}
+                      onChange={(e) => {
+                        const newMsgs = [...msgs];
+                        newMsgs[i].feedback = {
+                          ...(newMsgs[i].feedback || {}),
+                          comment: e.target.value,
+                        };
+                        setMsgs(newMsgs);
+                      }}
+                    />
+
+                    <button
+                      className="btn primary"
+                      style={{
+                        marginTop: 8,
+                        background: "#a60e0e",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 6,
+                        padding: "6px 12px",
+                        cursor: "pointer",
+                        opacity: m.feedback?.submitted ? 0.6 : 1,
+                      }}
+                      disabled={m.feedback?.submitted}
+                      onClick={async () => {
+                        const fb = msgs[i].feedback || {};
+                        if (fb.correct === undefined && !fb.comment) return;
+
+                        try {
+                          await fetch(`${API_BASE}/feedback`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              sid,
+                              mid: m.mid,
+                              correct: fb.correct,
+                              comment: fb.comment,
+                            }),
+                          });
+
+                          // mark as submitted and show subtle visual change
+                          const newMsgs = [...msgs];
+                          newMsgs[i].feedback = {
+                            ...fb,
+                            submitted: true,
+                          };
+                          setMsgs(newMsgs);
+                        } catch (err) {
+                          console.error("Feedback error:", err);
+                        }
+                      }}
+                    >
+                      {m.feedback?.submitted ? "✓ Feedback Saved" : "Send Feedback"}
+                    </button>
+
+                  </div>
+                </div>
+              )}
+
             </div>
           ))}
+
           {busy && (
             <div className="bubble bot typing">
               <div className="typing-dots">
