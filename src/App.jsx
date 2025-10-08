@@ -10,7 +10,7 @@ function SourceChips({ sources = [] }) {
   return (
     <div className="src">
       Sources:
-      {sources.map((s, i) => {
+      {sources.slice(0, 4).map((s, i) => {
         let label = s;
         try { label = new URL(s).pathname; } catch { }
         return (
