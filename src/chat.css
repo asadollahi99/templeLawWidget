@@ -20,6 +20,29 @@ body,
     height: 100%;
 }
 
+body {
+    background-color: #f6f7fb !important;
+    font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+.card {
+    border-radius: 12px !important;
+}
+
+.btn-danger {
+    background-color: #a60e0e !important;
+    border-color: #a60e0e !important;
+}
+
+.btn-danger:hover {
+    background-color: #8a0000 !important;
+}
+
+.table th,
+.table td {
+    vertical-align: middle !important;
+}
+
 /* center the widget in the middle of the page */
 /* src/chat.css */
 
@@ -477,7 +500,81 @@ body {
     animation-delay: 0.4s;
 }
 
-@keyframes dotBlink {
+.chat-page {
+    font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: linear-gradient(135deg, #f6f7fb 0%, #ffffff 100%);
+}
+
+.toast-message {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #222;
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    opacity: 0.9;
+    z-index: 9999;
+    animation: fadeInOut 2s forwards;
+}
+
+@keyframes fadeInOut {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(10px);
+    }
+
+    15% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    85% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(10px);
+    }
+}
+
+.typing-dots {
+    display: flex;
+    gap: 6px;
+}
+
+.typing-dots span {
+    width: 8px;
+    height: 8px;
+    background-color: #888;
+    border-radius: 50%;
+    opacity: 0.4;
+    animation: blink 1.4s infinite both;
+}
+
+.typing-dots span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-dots span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+.sidebar {
+    flex-shrink: 0;
+    width: 250px;
+}
+
+.main-content {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+@keyframes blink {
 
     0%,
     80%,

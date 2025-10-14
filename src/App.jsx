@@ -1,18 +1,25 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
 import "./chat.css";
-import React from "react";
+import templeLogo from "./assets/temple-logo.png"; // your Temple logo file
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8790";
 const TITLE = import.meta.env.VITE_CHAT_TITLE || "Temple Law Chat";
 
+// Theme colors
+const THEME_ACCENT = "#7b1e1e"; // deep maroon
+const THEME_GRADIENT = "linear-gradient(90deg, #7b1e1e 0%, #34495e 100%)";
+
 function SourceChips({ sources = [] }) {
   if (!sources.length) return null;
   return (
-    <div className="src">
-      Sources:
+    <div className="src mt-2">
+      <b>Sources:</b>{" "}
       {sources.slice(0, 4).map((s, i) => {
         let label = s;
-        try { label = new URL(s).pathname; } catch { }
+        try {
+          label = new URL(s).pathname;
+        } catch { }
         return (
           <a key={i} href={s} target="_blank" rel="noreferrer">
             {label}
@@ -29,21 +36,19 @@ export default function App() {
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
   const [msgs, setMsgs] = useState([]);
-  const logRef = useRef(null);
-
   const [showHist, setShowHist] = useState(false);
   const [histItems, setHistItems] = useState([]);
+  const logRef = useRef(null);
 
-  const add = (role, content, sources = [], mid = null) => {
-    setMsgs(m => [...m, { mid, role, content, sources, ts: new Date() }]);
-  };
+  const add = (role, content, sources = [], mid = null) =>
+    setMsgs((m) => [...m, { mid, role, content, sources, ts: new Date() }]);
 
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: "smooth" });
   }, [msgs, busy]);
 
   const openHistory = async () => {
-    if (!sid) { alert("No conversation yet."); return; }
+    if (!sid) return alert("No conversation yet.");
     try {
       const r = await fetch(`${API_BASE}/history?sid=${encodeURIComponent(sid)}`);
       const j = await r.json();
@@ -55,7 +60,9 @@ export default function App() {
   };
 
   const downloadHistory = () => {
-    const blob = new Blob([JSON.stringify({ sid, history: histItems }, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify({ sid, history: histItems }, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -63,6 +70,7 @@ export default function App() {
     a.click();
     URL.revokeObjectURL(url);
   };
+
   const send = async () => {
     const query = q.trim();
     if (!query || busy) return;
@@ -108,58 +116,84 @@ export default function App() {
     localStorage.removeItem("tlc_sid");
     setSid("");
     setMsgs([]);
-    add("assistant", "Conversation reset.");
+
+    const notice = document.createElement("div");
+    notice.textContent = "Conversation reset.";
+    notice.style.cssText = `
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+      background: #212529; color: #fff; padding: 8px 14px; border-radius: 6px;
+      font-size: 14px; opacity: 0.9; z-index: 9999;
+    `;
+    document.body.appendChild(notice);
+    setTimeout(() => notice.remove(), 2000);
   };
+
   const saveFeedback = async (index, correct, comment) => {
     if (!sid) return;
     const newMsgs = [...msgs];
-    newMsgs[index] = {
-      ...newMsgs[index],
-      feedback: { correct, comment },
-    };
+    newMsgs[index] = { ...newMsgs[index], feedback: { correct, comment } };
     setMsgs(newMsgs);
-
     try {
       await fetch(`${API_BASE}/feedback`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sid, mid: msgs[index].mid, correct, comment })
+        body: JSON.stringify({ sid, mid: msgs[index].mid, correct, comment }),
       });
-
     } catch (e) {
       console.error("Feedback save failed:", e.message);
     }
   };
 
   return (
-    <div className="page">
-      <div className="wrap">
-        <header className="hdr">
-          <div className="brand">{TITLE}</div>
-          <div className="hdr-actions">
-            <button className="btn" onClick={openHistory} title="View chat history" disabled={!sid}>History</button>
-            <button className="btn" onClick={reset} title="Reset conversation">Reset</button>
+    <div className="page bg-light">
+      <div className="wrap card shadow-lg border-0 rounded-4 overflow-hidden">
+        {/* Header */}
+        <header
+          className="hdr d-flex align-items-center justify-content-between p-3 text-white"
+          style={{
+            background: THEME_GRADIENT,
+            borderBottom: "1px solid rgba(255,255,255,0.2)",
+          }}
+        >
+          <div className="d-flex align-items-center gap-2">
+            <img src={templeLogo} alt="Temple Logo" width="36" height="36" />
+            <h5 className="m-0 fw-semibold">{TITLE}</h5>
+          </div>
+          <div className="hdr-actions d-flex gap-2">
+            <button
+              className="btn btn-light btn-sm"
+              onClick={openHistory}
+              disabled={!sid}
+            >
+              History
+            </button>
+            <button
+              className="btn btn-light btn-sm"
+              onClick={reset}
+            >
+              Reset
+            </button>
           </div>
         </header>
 
-        <main ref={logRef} className="log">
+        {/* Chat log */}
+        <main ref={logRef} className="log card-body bg-white">
           {msgs.length === 0 && (
-            <div className="empty">
+            <div className="empty text-center text-muted mt-5">
               Ask anything about <b>law.temple.edu</b>. I’ll cite sources under each answer.
             </div>
           )}
+
           {msgs.map((m, i) => (
             <div key={i} className={`bubble ${m.role === "user" ? "me" : "bot"}`}>
               <div className="content">{m.content}</div>
-              <div className="meta">
+              <div className="meta text-muted small">
                 {m.ts?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </div>
 
               {m.role === "assistant" && (
                 <div style={{ marginTop: 8 }}>
                   <SourceChips sources={m.sources} />
-
-                  {/* Feedback UI */}
                   <div
                     style={{
                       marginTop: 10,
@@ -177,10 +211,7 @@ export default function App() {
                         checked={m.feedback?.correct === true}
                         onChange={() => {
                           const newMsgs = [...msgs];
-                          newMsgs[i].feedback = {
-                            ...(newMsgs[i].feedback || {}),
-                            correct: true,
-                          };
+                          newMsgs[i].feedback = { ...(newMsgs[i].feedback || {}), correct: true };
                           setMsgs(newMsgs);
                         }}
                       />{" "}
@@ -193,10 +224,7 @@ export default function App() {
                         checked={m.feedback?.correct === false}
                         onChange={() => {
                           const newMsgs = [...msgs];
-                          newMsgs[i].feedback = {
-                            ...(newMsgs[i].feedback || {}),
-                            correct: false,
-                          };
+                          newMsgs[i].feedback = { ...(newMsgs[i].feedback || {}), correct: false };
                           setMsgs(newMsgs);
                         }}
                       />{" "}
@@ -206,41 +234,26 @@ export default function App() {
                     <textarea
                       placeholder="Write comment..."
                       rows={2}
-                      style={{
-                        width: "100%",
-                        marginTop: 8,
-                        resize: "vertical",
-                        fontSize: 13,
-                        padding: 6,
-                      }}
+                      className="form-control mt-2"
                       value={m.feedback?.comment || ""}
                       onChange={(e) => {
                         const newMsgs = [...msgs];
-                        newMsgs[i].feedback = {
-                          ...(newMsgs[i].feedback || {}),
-                          comment: e.target.value,
-                        };
+                        newMsgs[i].feedback = { ...(newMsgs[i].feedback || {}), comment: e.target.value };
                         setMsgs(newMsgs);
                       }}
                     />
 
                     <button
-                      className="btn primary"
+                      className="btn btn-sm text-white mt-2"
                       style={{
-                        marginTop: 8,
-                        background: "#a60e0e",
-                        color: "white",
-                        border: "none",
+                        backgroundColor: THEME_ACCENT,
                         borderRadius: 6,
-                        padding: "6px 12px",
-                        cursor: "pointer",
                         opacity: m.feedback?.submitted ? 0.6 : 1,
                       }}
                       disabled={m.feedback?.submitted}
                       onClick={async () => {
                         const fb = msgs[i].feedback || {};
                         if (fb.correct === undefined && !fb.comment) return;
-
                         try {
                           await fetch(`${API_BASE}/feedback`, {
                             method: "POST",
@@ -252,13 +265,8 @@ export default function App() {
                               comment: fb.comment,
                             }),
                           });
-
-                          // mark as submitted and show subtle visual change
                           const newMsgs = [...msgs];
-                          newMsgs[i].feedback = {
-                            ...fb,
-                            submitted: true,
-                          };
+                          newMsgs[i].feedback = { ...fb, submitted: true };
                           setMsgs(newMsgs);
                         } catch (err) {
                           console.error("Feedback error:", err);
@@ -267,11 +275,9 @@ export default function App() {
                     >
                       {m.feedback?.submitted ? "✓ Feedback Saved" : "Send Feedback"}
                     </button>
-
                   </div>
                 </div>
               )}
-
             </div>
           ))}
 
@@ -282,39 +288,50 @@ export default function App() {
               </div>
             </div>
           )}
-
-
         </main>
 
-        <footer className="inp">
+        {/* Input */}
+        <footer className="inp card-footer bg-light d-flex gap-2">
           <textarea
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={onKey}
             placeholder="Ask about law.temple.edu…"
             rows={1}
+            className="form-control border"
           />
-          <button className="btn primary" onClick={send} disabled={busy || !q.trim()}>
+          <button
+            className="btn text-white px-4"
+            style={{ backgroundColor: THEME_ACCENT }}
+            onClick={send}
+            disabled={busy || !q.trim()}
+          >
             Send
           </button>
         </footer>
-        {/* History Modal */}
+
+        {/* History modal */}
         {showHist && (
-          <div className="modal-backdrop" onClick={() => setShowHist(false)}>
-            <div className="modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-hdr">
-                <b>Chat History</b>
-                <div className="gap"></div>
-                <button className="btn" onClick={downloadHistory}>Download JSON</button>
-                <button className="btn" onClick={() => setShowHist(false)}>Close</button>
+          <div className="modal-backdrop-custom" onClick={() => setShowHist(false)}>
+            <div className="modal-custom" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-hdr d-flex justify-content-between align-items-center border-bottom pb-2">
+                <h5 className="m-0 fw-semibold">Chat History</h5>
+                <div className="d-flex gap-2">
+                  <button className="btn btn-light btn-sm" onClick={downloadHistory}>
+                    Download JSON
+                  </button>
+                  <button className="btn btn-light btn-sm" onClick={() => setShowHist(false)}>
+                    Close
+                  </button>
+                </div>
               </div>
-              <div className="modal-body">
-                {!histItems.length && <div className="muted">No messages yet.</div>}
+              <div className="modal-body mt-2">
+                {!histItems.length && <div className="text-muted text-center py-4">No messages yet.</div>}
                 {histItems.map((m, i) => (
                   <div key={i} className={`hist-row ${m.role}`}>
-                    <span className="role">{m.role}</span>
+                    <span className="role fw-bold text-capitalize">{m.role}</span>
                     <span className="text">{m.content}</span>
-                    {m.ts && <span className="time">{new Date(m.ts).toLocaleString()}</span>}
+                    {m.ts && <span className="time text-muted small">{new Date(m.ts).toLocaleString()}</span>}
                   </div>
                 ))}
               </div>
@@ -325,15 +342,3 @@ export default function App() {
     </div>
   );
 }
-
-
-// import React from "react";
-
-// export default function App() {
-//   return (
-//     <div style={{ padding: 24 }}>
-//       <h1>Temple Law Chat — Local Dev</h1>
-//       <p>If you can see this, React rendered successfully.</p>
-//     </div>
-//   );
-// }

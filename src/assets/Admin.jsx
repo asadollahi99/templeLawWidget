@@ -1,53 +1,72 @@
 import { useEffect, useState } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
+import { Gear, ClockHistory } from "react-bootstrap-icons";
+import templeLogo from "./temple-logo.png"; // your Temple logo
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8790";
 const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN || "";
 
-// ====================== Sidebar ======================
+// Theme
+const THEME_GRADIENT = "linear-gradient(90deg, #7b1e1e 0%, #34495e 100%)";
+const THEME_ACCENT = "#7b1e1e";
+
+// ---------------- Sidebar ----------------
 function Sidebar({ active, setActive }) {
     const menu = [
-        { id: "history", label: "Chat History" },
-        { id: "models", label: "Model Settings" },
+        { id: "history", label: "Chat History", icon: <ClockHistory size={18} /> },
+        { id: "models", label: "Model Settings", icon: <Gear size={18} /> },
     ];
 
     return (
-        <div style={{
-            width: 220,
-            background: "#f8f9fb",
-            padding: "20px 10px",
-            borderRight: "1px solid #e0e4ea",
-            height: "100vh",
-            position: "fixed",
-            top: 0,
-            left: 0,
-            overflowY: "auto"
-        }}>
-            <h3 style={{ marginLeft: 10 }}>Admin Menu</h3>
-            <ul style={{ listStyle: "none", padding: 0, marginTop: 20 }}>
-                {menu.map(m => (
-                    <li key={m.id} style={{ marginBottom: 10 }}>
+        <div
+            className="d-flex flex-column p-3 shadow-sm position-fixed top-0 start-0 bg-white"
+            style={{
+                width: 250,
+                height: "100vh",
+                borderRight: "1px solid #dee2e6",
+            }}
+        >
+            <div className="text-center mb-4">
+                <img
+                    src={templeLogo}
+                    alt="Temple"
+                    width="80"
+                    height="80"
+                    className="rounded-circle shadow-sm mb-2"
+                />
+                <h5 className="fw-bold mb-0 text-dark">Temple Law</h5>
+                <small className="text-muted">Admin Panel</small>
+            </div>
+
+            <ul className="nav nav-pills flex-column mb-auto">
+                {menu.map((m) => (
+                    <li className="nav-item mb-2" key={m.id}>
                         <button
-                            onClick={() => setActive(m.id)}
+                            className={`btn w-100 text-start d-flex align-items-center gap-2 py-2 ${active === m.id ? "text-white" : "text-dark"
+                                }`}
                             style={{
-                                width: "100%",
-                                textAlign: "left",
-                                background: active === m.id ? "#dde6f7" : "transparent",
-                                border: "none",
-                                padding: "10px 14px",
-                                cursor: "pointer",
-                                borderRadius: 6
+                                background: active === m.id ? THEME_GRADIENT : "#f8f9fa",
+                                borderRadius: 8,
+                                border: "1px solid #dee2e6",
+                                transition: "0.3s",
                             }}
+                            onClick={() => setActive(m.id)}
                         >
+                            {m.icon}
                             {m.label}
                         </button>
                     </li>
                 ))}
             </ul>
+
+            <div className="text-center text-muted mt-auto small">
+                © Temple Law Chat
+            </div>
         </div>
     );
 }
 
-// ====================== Chat History Section ======================
+// ---------------- Chat History ----------------
 function ChatHistory() {
     const [rows, setRows] = useState([]);
     const [total, setTotal] = useState(0);
@@ -72,11 +91,13 @@ function ChatHistory() {
         setSkip(sk);
     };
 
-    useEffect(() => { fetchList(0); /* eslint-disable-next-line */ }, []);
+    useEffect(() => {
+        fetchList(0);
+    }, []);
 
     const open = async (sid) => {
         const r = await fetch(`${API_BASE}/admin/session/${encodeURIComponent(sid)}`, {
-            headers: { "x-admin-token": ADMIN_TOKEN }
+            headers: { "x-admin-token": ADMIN_TOKEN },
         });
         setDetail(await r.json());
     };
@@ -85,7 +106,7 @@ function ChatHistory() {
         if (!window.confirm(`Delete session ${sid}?`)) return;
         await fetch(`${API_BASE}/admin/session/${encodeURIComponent(sid)}`, {
             method: "DELETE",
-            headers: { "x-admin-token": ADMIN_TOKEN }
+            headers: { "x-admin-token": ADMIN_TOKEN },
         });
         if (detail?.sid === sid) setDetail(null);
         fetchList(skip);
@@ -97,150 +118,200 @@ function ChatHistory() {
         a.download = "sessions.ndjson";
         a.click();
     };
-    const saveFeedback = async (index, correct, comment) => {
-        if (!detail?.sid) return;
-        await fetch(`${API_BASE}/feedback`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-admin-token": ADMIN_TOKEN
-            },
-            body: JSON.stringify({ sid: detail.sid, index, correct, comment })
-        });
-        // update local UI state immediately
-        const newHistory = [...detail.history];
-        newHistory[index] = {
-            ...newHistory[index],
-            feedback: { correct, comment, ts: new Date() }
-        };
-        setDetail({ ...detail, history: newHistory });
-    };
 
     return (
-        <div style={{ padding: 20, fontFamily: "system-ui,Arial" }}>
-            <h2>Admin — Chat Sessions</h2>
+        <div className="main-content" style={{ marginLeft: 260 }}>
+            <header
+                className="d-flex align-items-center justify-content-between p-3 text-white shadow-sm"
+                style={{ background: THEME_GRADIENT }}
+            >
+                <h5 className="m-0 fw-semibold">Chat Sessions</h5>
+                <button className="btn btn-light btn-sm" onClick={exportNdjson}>
+                    Export Sessions
+                </button>
+            </header>
 
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
-                <input placeholder="Search text…" value={q} onChange={e => setQ(e.target.value)} />
-                <input type="date" value={from} onChange={e => setFrom(e.target.value)} />
-                <input type="date" value={to} onChange={e => setTo(e.target.value)} />
-                <button onClick={() => fetchList(0)}>Search</button>
-                <button onClick={exportNdjson}>Export NDJSON</button>
-            </div>
-
-            <table width="100%" cellPadding={6} style={{ borderCollapse: "collapse" }}>
-                <thead>
-                    <tr style={{ background: "#f4f6fa" }}>
-                        <th align="left">SID</th>
-                        <th align="left">Messages (✓ / ✗)</th>
-                        <th align="left">Created</th>
-                        <th align="left">Updated</th>
-                        <th align="left">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {rows.map(r => (
-                        <tr key={r.sid}>
-                            <td><code>{r.sid}</code></td>
-                            <td>
-                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                    <span>{r.count ?? "–"}</span>
-                                    {typeof r.correctCount === "number" && (
-                                        <>
-                                            <span style={{ color: "green", fontWeight: "bold" }}>
-                                                +{r.correctCount}
-                                            </span>
-                                            <span style={{ color: "red", fontWeight: "bold" }}>
-                                                -{r.incorrectCount}
-                                            </span>
-                                        </>
-                                    )}
-                                </div>
-                            </td>
-
-                            <td>{r.createdAt ? new Date(r.createdAt).toLocaleString() : "–"}</td>
-                            <td>{r.updatedAt ? new Date(r.updatedAt).toLocaleString() : "–"}</td>
-                            <td>
-                                <button onClick={() => open(r.sid)}>Open</button>{" "}
-                                <button onClick={() => del(r.sid)} style={{ color: "#a00" }}>Delete</button>
-                            </td>
-                        </tr>
-                    ))}
-                    {!rows.length && <tr><td colSpan="5">No results.</td></tr>}
-                </tbody>
-            </table>
-
-            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                <button disabled={skip === 0} onClick={() => fetchList(Math.max(skip - limit, 0))}>Prev</button>
-                <div style={{ alignSelf: "center" }}>
-                    {skip + 1}–{Math.min(skip + limit, total)} of {total}
+            <div className="container-fluid p-4">
+                <div className="d-flex flex-wrap gap-2 mb-3">
+                    <input
+                        className="form-control w-auto"
+                        placeholder="Search text…"
+                        value={q}
+                        onChange={(e) => setQ(e.target.value)}
+                    />
+                    <input
+                        type="date"
+                        className="form-control w-auto"
+                        value={from}
+                        onChange={(e) => setFrom(e.target.value)}
+                    />
+                    <input
+                        type="date"
+                        className="form-control w-auto"
+                        value={to}
+                        onChange={(e) => setTo(e.target.value)}
+                    />
+                    <button
+                        className="btn text-white"
+                        style={{ backgroundColor: THEME_ACCENT }}
+                        onClick={() => fetchList(0)}
+                    >
+                        Search
+                    </button>
                 </div>
-                <button disabled={skip + limit >= total} onClick={() => fetchList(skip + limit)}>Next</button>
-            </div>
 
-            {detail && (
-                <div style={{ marginTop: 20, padding: 12, border: "1px solid #e2e6ee", borderRadius: 10 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <h3 style={{ margin: 0 }}>Session: {detail.sid}</h3>
-                        <button onClick={() => setDetail(null)}>Close</button>
+                <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div className="table-responsive">
+                        <table className="table table-hover align-middle mb-0">
+                            <thead style={{ backgroundColor: "#f1f3f5" }}>
+                                <tr>
+                                    <th>SID</th>
+                                    <th>Messages (✓ / ✗)</th>
+                                    <th>Created</th>
+                                    <th>Updated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {rows.map((r) => (
+                                    <tr key={r.sid}>
+                                        <td>
+                                            <code>{r.sid}</code>
+                                        </td>
+                                        <td>
+                                            <span>{r.count ?? "–"}</span>{" "}
+                                            {typeof r.correctCount === "number" && (
+                                                <>
+                                                    <span className="text-success fw-bold ms-1">
+                                                        +{r.correctCount}
+                                                    </span>
+                                                    <span className="text-danger fw-bold ms-1">
+                                                        -{r.incorrectCount}
+                                                    </span>
+                                                </>
+                                            )}
+                                        </td>
+                                        <td>
+                                            {r.createdAt
+                                                ? new Date(r.createdAt).toLocaleString()
+                                                : "–"}
+                                        </td>
+                                        <td>
+                                            {r.updatedAt
+                                                ? new Date(r.updatedAt).toLocaleString()
+                                                : "–"}
+                                        </td>
+                                        <td>
+                                            <button
+                                                className="btn btn-sm btn-outline-primary me-2"
+                                                onClick={() => open(r.sid)}
+                                            >
+                                                View
+                                            </button>
+                                            <button
+                                                className="btn btn-sm btn-outline-danger"
+                                                onClick={() => del(r.sid)}
+                                            >
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {!rows.length && (
+                                    <tr>
+                                        <td colSpan="5" className="text-center text-muted">
+                                            No results found.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
-                    <div style={{ maxHeight: 400, overflow: "auto", marginTop: 10 }}>
-                        {(detail.history || []).map((m, i) => (
-                            <div key={i} style={{ padding: "8px 0", borderBottom: "1px solid #f2f2f2" }}>
-                                <b style={{ textTransform: "capitalize" }}>{m.role}</b> ·{" "}
-                                <small>{m.ts ? new Date(m.ts).toLocaleString() : ""}</small>
-                                <div style={{ whiteSpace: "pre-wrap", marginTop: 4 }}>{m.content}</div>
+                </div>
 
+                {/* Pagination */}
+                <div className="d-flex align-items-center gap-2 mt-3">
+                    <button
+                        className="btn btn-outline-secondary"
+                        disabled={skip === 0}
+                        onClick={() => fetchList(Math.max(skip - limit, 0))}
+                    >
+                        Prev
+                    </button>
+                    <div className="text-muted small">
+                        {skip + 1}–{Math.min(skip + limit, total)} of {total}
+                    </div>
+                    <button
+                        className="btn btn-outline-secondary"
+                        disabled={skip + limit >= total}
+                        onClick={() => fetchList(skip + limit)}
+                    >
+                        Next
+                    </button>
+                </div>
 
-                                {m.role === "assistant" && m.feedback && (
-                                    <div
-                                        style={{
-                                            marginTop: 8,
-                                            marginLeft: 10,
-                                            padding: "6px 10px",
-                                            background: "#f9fafc",
-                                            border: "1px solid #e2e6ee",
-                                            borderRadius: 8,
-                                            fontSize: 13,
-                                            color: "#333",
-                                        }}
-                                    >
-                                        <div style={{ marginBottom: 4 }}>
+                {/* Session Detail */}
+                {detail && (
+                    <div className="card mt-4 shadow-sm border-0 rounded-4">
+                        <div
+                            className="card-header d-flex justify-content-between align-items-center text-white"
+                            style={{ background: THEME_GRADIENT }}
+                        >
+                            <strong>Session: {detail.sid}</strong>
+                            <button
+                                className="btn btn-sm btn-light"
+                                onClick={() => setDetail(null)}
+                            >
+                                Close
+                            </button>
+                        </div>
+                        <div
+                            className="card-body overflow-auto"
+                            style={{ maxHeight: 420, backgroundColor: "#fafafa" }}
+                        >
+                            {(detail.history || []).map((m, i) => (
+                                <div key={i} className="mb-3 pb-2 border-bottom">
+                                    <b className="text-capitalize">{m.role}</b> ·{" "}
+                                    <small className="text-muted">
+                                        {m.ts ? new Date(m.ts).toLocaleString() : ""}
+                                    </small>
+                                    <div className="mt-1" style={{ whiteSpace: "pre-wrap" }}>
+                                        {m.content}
+                                    </div>
+
+                                    {m.role === "assistant" && m.feedback && (
+                                        <div className="bg-white border rounded p-2 mt-2 small shadow-sm">
                                             <b>Feedback:</b>{" "}
                                             {m.feedback.correct === true ? (
-                                                <span style={{ color: "green" }}>✔ Correct</span>
+                                                <span className="text-success">✔ Correct</span>
                                             ) : m.feedback.correct === false ? (
-                                                <span style={{ color: "red" }}>✖ Incorrect</span>
+                                                <span className="text-danger">✖ Incorrect</span>
                                             ) : (
-                                                <span style={{ color: "#999" }}>– No label</span>
+                                                <span className="text-muted">– No label</span>
+                                            )}
+                                            {m.feedback.comment && (
+                                                <div>
+                                                    <b>Comment:</b> {m.feedback.comment}
+                                                </div>
                                             )}
                                         </div>
-                                        {m.feedback.comment && (
-                                            <div style={{ whiteSpace: "pre-wrap" }}>
-                                                <b>Comment:</b> {m.feedback.comment}
-                                            </div>
-                                        )}
-                                        {m.feedback.ts && (
-                                            <div style={{ fontSize: 11, color: "#777", marginTop: 4 }}>
-                                                Updated {new Date(m.feedback.ts).toLocaleString()}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                            </div>
-                        ))}
-                        {!detail.history?.length && <div>Empty.</div>}
+                                    )}
+                                </div>
+                            ))}
+                            {!detail.history?.length && <div>Empty.</div>}
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }
 
-// ====================== Model Settings Section ======================
+// ---------------- Model Settings ----------------
 function ModelSettings() {
-    const [model, setModel] = useState(localStorage.getItem("openai_model") || "gpt-4o-mini");
+    const [model, setModel] = useState(
+        localStorage.getItem("openai_model") || "gpt-4o-mini"
+    );
     const models = ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"];
 
     const saveModel = () => {
@@ -249,30 +320,54 @@ function ModelSettings() {
     };
 
     return (
-        <div style={{ padding: 20 }}>
-            <h2>Model Settings</h2>
-            <p>Select which OpenAI model to use for responses:</p>
-            <select value={model} onChange={(e) => setModel(e.target.value)}>
-                {models.map(m => <option key={m} value={m}>{m}</option>)}
-            </select>
-            <button onClick={saveModel} style={{ marginLeft: 10 }}>Save</button>
-        </div>
-    );
-}
+        <div className="main-content" style={{ marginLeft: 260 }}>
+            <header
+                className="d-flex align-items-center justify-content-between p-3 text-white shadow-sm"
+                style={{ background: THEME_GRADIENT }}
+            >
+                <h5 className="m-0 fw-semibold">Model Settings</h5>
+            </header>
 
-// ====================== Main Component ======================
-export default function Admin() {
-    const [active, setActive] = useState("history");
-
-    return (
-        <div style={{ display: "flex" }}>
-            <Sidebar active={active} setActive={setActive} />
-            <div style={{ marginLeft: 240, width: "100%" }}>
-                {active === "history" && <ChatHistory />}
-                {active === "models" && <ModelSettings />}
+            <div className="container p-4">
+                <div
+                    className="card p-4 shadow-sm border-0 rounded-4"
+                    style={{ maxWidth: 480 }}
+                >
+                    <p className="text-muted mb-2">
+                        Select which OpenAI model to use for responses:
+                    </p>
+                    <select
+                        className="form-select mb-3"
+                        value={model}
+                        onChange={(e) => setModel(e.target.value)}
+                    >
+                        {models.map((m) => (
+                            <option key={m} value={m}>
+                                {m}
+                            </option>
+                        ))}
+                    </select>
+                    <button
+                        className="btn text-white w-100"
+                        style={{ backgroundColor: THEME_ACCENT }}
+                        onClick={saveModel}
+                    >
+                        Save Model
+                    </button>
+                </div>
             </div>
         </div>
     );
 }
 
-
+// ---------------- Main Admin ----------------
+export default function Admin() {
+    const [active, setActive] = useState("history");
+    return (
+        <div className="d-flex bg-light">
+            <Sidebar active={active} setActive={setActive} />
+            {active === "history" && <ChatHistory />}
+            {active === "models" && <ModelSettings />}
+        </div>
+    );
+}
