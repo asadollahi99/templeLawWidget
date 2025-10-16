@@ -128,22 +128,6 @@ export default function App() {
     setTimeout(() => notice.remove(), 2000);
   };
 
-  const saveFeedback = async (index, correct, comment) => {
-    if (!sid) return;
-    const newMsgs = [...msgs];
-    newMsgs[index] = { ...newMsgs[index], feedback: { correct, comment } };
-    setMsgs(newMsgs);
-    try {
-      await fetch(`${API_BASE}/feedback`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sid, mid: msgs[index].mid, correct, comment }),
-      });
-    } catch (e) {
-      console.error("Feedback save failed:", e.message);
-    }
-  };
-
   return (
     <div className="page bg-light">
       <div className="wrap card shadow-lg border-0 rounded-4 overflow-hidden">
