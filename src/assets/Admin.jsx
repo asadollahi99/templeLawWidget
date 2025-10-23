@@ -4,14 +4,20 @@ import { Gear, ClockHistory, ClipboardCheck, QuestionSquare, PencilSquare, Trash
 import templeLogo from "./temple-logo.png"; // your Temple logo
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8790";
-const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN || "";
+//const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN || "";
+const ADMIN_TOKEN = localStorage.getItem("admin_token") || "";
 
 // Theme
 const THEME_GRADIENT = "linear-gradient(90deg, #7b1e1e 0%, #34495e 100%)";
 const THEME_ACCENT = "#7b1e1e";
+const TOKEN = localStorage.getItem("jwt_token");
+const ROLE = localStorage.getItem("role");
+
 
 // ---------------- Sidebar ----------------
 function Sidebar({ active, setActive }) {
+    const role = localStorage.getItem("role");
+
     const menu = [
         { id: "history", label: "Chat History", icon: <ClockHistory size={18} /> },
         { id: "review", label: "Review Chat", icon: <ClipboardCheck size={18} /> },
@@ -19,52 +25,63 @@ function Sidebar({ active, setActive }) {
         { id: "models", label: "Model Settings", icon: <Gear size={18} /> },
     ];
 
+    if (role === "superadmin") {
+        menu.push({
+            id: "users",
+            label: "User Management",
+            icon: <PencilSquare size={18} />,
+        });
+    }
+
     return (
         <div
-            className="d-flex flex-column p-3 shadow-sm position-fixed top-0 start-0 bg-white"
-            style={{
-                width: 250,
-                height: "100vh",
-                borderRight: "1px solid #dee2e6",
-            }}
+            className="sidebar-fixed d-flex flex-column p-3 shadow-sm position-fixed top-0 start-0 bg-white"
+            style={{ width: 250, height: "100vh", borderRight: "1px solid #dee2e6" }}
         >
             <div className="text-center mb-4">
-                <img
-                    src={templeLogo}
-                    alt="Temple"
-                    width="80"
-                    height="80"
-                    className="rounded-circle shadow-sm mb-2"
-                />
-                <h5 className="fw-bold mb-0 text-dark">Temple Law</h5>
+                <img src={templeLogo} alt="Temple Law" width={80} />
+                <h5 className="mt-2 mb-0">Temple Law</h5>
                 <small className="text-muted">Admin Panel</small>
             </div>
 
-            <ul className="nav nav-pills flex-column mb-auto">
-                {menu.map((m) => (
-                    <li className="nav-item mb-2" key={m.id}>
-                        <button
-                            className={`btn w-100 text-start d-flex align-items-center gap-2 py-2 ${active === m.id ? "text-white" : "text-dark"
-                                }`}
-                            style={{
-                                background: active === m.id ? THEME_GRADIENT : "#f8f9fa",
-                                borderRadius: 8,
-                                border: "1px solid #dee2e6",
-                                transition: "0.3s",
-                            }}
-                            onClick={() => setActive(m.id)}
-                        >
-                            {m.icon}
-                            {m.label}
-                        </button>
-                    </li>
-                ))}
-            </ul>
+            {menu.map((item) => (
+                <button
+                    key={item.id}
+                    className={`btn w-100 text-start mb-2 ${active === item.id
+                        ? "text-white"
+                        : "text-dark"
+                        }`}
+                    style={{
+                        background:
+                            active === item.id
+                                ? "linear-gradient(90deg, #7b1e1e 0%, #34495e 100%)"
+                                : "#f8f9fa",
+                        border: "none",
+                        fontWeight: active === item.id ? "600" : "normal",
+                    }}
+                    onClick={() => setActive(item.id)}
+                >
+                    <span className="me-2">{item.icon}</span>
+                    {item.label}
+                </button>
+            ))}
 
-            <div className="text-center text-muted mt-auto small">© Temple Law Chat</div>
+            <button
+                className="btn btn-danger mt-auto w-100"
+                onClick={() => {
+                    localStorage.clear();
+                    window.location.href = "/login";
+                }}
+            >
+                Logout
+            </button>
+
+            <div className="text-center mt-3 text-muted small">© Temple Law Chat</div>
         </div>
     );
 }
+
+
 
 // ---------------- Helpers ----------------
 function idToString(doc) {
@@ -77,6 +94,8 @@ function idToString(doc) {
     if (typeof _id.toString === "function") return _id.toString();
     return JSON.stringify(_id);
 }
+
+
 
 // ---------------- Overrides Panel ----------------
 function OverridesPanel() {
@@ -98,7 +117,9 @@ function OverridesPanel() {
         try {
             const url = new URL(`${API_BASE}/admin/overrides`);
             if (search) url.searchParams.set("q", search);
-            const r = await fetch(url.toString(), { headers: { "x-admin-token": ADMIN_TOKEN } });
+            const r = await fetch(url.toString(), {
+                headers: { Authorization: `Bearer ${TOKEN}` }
+            });
             const j = await r.json();
             setRows(j.rows || []);
         } catch (err) {
@@ -131,7 +152,7 @@ function OverridesPanel() {
         try {
             const r = await fetch(`${API_BASE}/admin/override`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", "x-admin-token": ADMIN_TOKEN },
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN}` },
                 body: JSON.stringify({ question: form.question.trim(), answer: form.answer, assistantContent: form.assistantContent || null, force: !!form.force, reviewer: form.reviewer || null })
             });
             const j = await r.json();
@@ -154,7 +175,7 @@ function OverridesPanel() {
         try {
             const r = await fetch(`${API_BASE}/admin/override/${encodeURIComponent(id)}`, {
                 method: "PATCH",
-                headers: { "Content-Type": "application/json", "x-admin-token": ADMIN_TOKEN },
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN}` },
                 body: JSON.stringify({
                     question: form.question.trim(),
                     answer: form.answer,
@@ -183,7 +204,7 @@ function OverridesPanel() {
         try {
             const r = await fetch(`${API_BASE}/admin/override/${encodeURIComponent(id)}`, {
                 method: "PATCH",
-                headers: { "Content-Type": "application/json", "x-admin-token": ADMIN_TOKEN },
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN}` },
                 body: JSON.stringify({ force: !doc.force })
             });
             const j = await r.json();
@@ -201,7 +222,8 @@ function OverridesPanel() {
         try {
             const r = await fetch(`${API_BASE}/admin/override/${encodeURIComponent(id)}`, {
                 method: "DELETE",
-                headers: { "x-admin-token": ADMIN_TOKEN }
+                headers: { Authorization: `Bearer ${TOKEN}` }
+
             });
             const j = await r.json();
             if (j.ok) fetchList();
@@ -212,7 +234,7 @@ function OverridesPanel() {
     }
 
     return (
-        <div className="main-content" style={{ marginLeft: 260 }}>
+        <div className="main-content">
             <header
                 className="d-flex align-items-center justify-content-between p-3 text-white shadow-sm"
                 style={{ background: THEME_GRADIENT }}
@@ -286,7 +308,7 @@ function OverridesPanel() {
                                     <th>Force</th>
                                     <th>Reviewer</th>
                                     <th>Updated</th>
-                                    <th style={{ width: 220 }}>Actions</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -300,10 +322,10 @@ function OverridesPanel() {
                                     const id = idToString(r);
                                     return (
                                         <tr key={id || Math.random()}>
-                                            <td style={{ maxWidth: 320, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                            <td style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                                 {r.question}
                                             </td>
-                                            <td style={{ maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                            <td style={{ maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                                 {r.answer ?? r.assistantContent ?? "—"}
                                             </td>
                                             <td>
@@ -349,7 +371,9 @@ function ChatHistory() {
         if (q) u.searchParams.set("q", q);
         if (from) u.searchParams.set("from", from);
         if (to) u.searchParams.set("to", to);
-        const r = await fetch(u, { headers: { "x-admin-token": ADMIN_TOKEN } });
+        const r = await fetch(u, {
+            headers: { Authorization: `Bearer ${TOKEN}` }
+        });
         const j = await r.json();
         setRows(j.rows || []);
         setTotal(j.total || 0);
@@ -362,7 +386,8 @@ function ChatHistory() {
 
     const open = async (sid) => {
         const r = await fetch(`${API_BASE}/admin/session/${encodeURIComponent(sid)}`, {
-            headers: { "x-admin-token": ADMIN_TOKEN },
+            headers: { Authorization: `Bearer ${TOKEN}` }
+            ,
         });
         setDetail(await r.json());
     };
@@ -371,7 +396,8 @@ function ChatHistory() {
         if (!window.confirm(`Delete session ${sid}?`)) return;
         await fetch(`${API_BASE}/admin/session/${encodeURIComponent(sid)}`, {
             method: "DELETE",
-            headers: { "x-admin-token": ADMIN_TOKEN },
+            headers: { Authorization: `Bearer ${TOKEN}` }
+            ,
         });
         if (detail?.sid === sid) setDetail(null);
         fetchList(skip);
@@ -385,7 +411,7 @@ function ChatHistory() {
     };
 
     return (
-        <div className="main-content" style={{ marginLeft: 260 }}>
+        <div className="main-content">
             <header
                 className="d-flex align-items-center justify-content-between p-3 text-white shadow-sm"
                 style={{ background: THEME_GRADIENT }}
@@ -553,7 +579,9 @@ function ReviewPanel() {
         const u = new URL(`${API_BASE}/admin/sessions`);
         u.searchParams.set("limit", String(limit));
         u.searchParams.set("skip", String(sk));
-        const r = await fetch(u, { headers: { "x-admin-token": ADMIN_TOKEN } });
+        const r = await fetch(u, {
+            headers: { Authorization: `Bearer ${TOKEN}` }
+        });
         const j = await r.json();
         setSessions(j.rows || []);
         setTotal(j.total || 0);
@@ -564,13 +592,13 @@ function ReviewPanel() {
     async function openSession(sid) {
         setSelectedSid(sid);
         const r = await fetch(`${API_BASE}/admin/session/${encodeURIComponent(sid)}`, {
-            headers: { "x-admin-token": ADMIN_TOKEN },
+            headers: { Authorization: `Bearer ${TOKEN}` }
+            ,
         });
         const j = await r.json();
         setSessionDetail(j);
     }
 
-    // generic save function (keeps compatibility with previous callers)
     async function saveCorrectedAnswer(question, corrected, extra = {}) {
         if (!question || !corrected) return alert("Question and corrected answer required.");
         try {
@@ -578,14 +606,13 @@ function ReviewPanel() {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "x-admin-token": ADMIN_TOKEN,
+                    "Authorization": `Bearer ${TOKEN}`,
                 },
                 body: JSON.stringify({ question, correctedAnswer: corrected, ...extra }),
             });
             const j = await r.json();
             if (j?.ok) {
                 alert("Corrected answer saved.");
-                // refresh sessions / current session detail to reflect new override if desired
                 fetchSessions(skip);
                 if (selectedSid) openSession(selectedSid);
             } else {
@@ -596,9 +623,61 @@ function ReviewPanel() {
         }
     }
 
+    // ✅ Helper component for resources with show more/less
+    function ResourceList({ sources }) {
+        const [expanded, setExpanded] = useState(false);
+        if (!Array.isArray(sources) || sources.length === 0)
+            return <div className="text-muted small">No resources recorded.</div>;
+
+        const visible = expanded ? sources : sources.slice(0, 2);
+        return (
+            <div className="d-flex flex-wrap gap-2 align-items-center">
+                {visible.map((s, i) => {
+                    let href = String(s || "").trim();
+                    if (href && !/^https?:\/\//i.test(href)) {
+                        if (href.startsWith("/")) href = `https://law.temple.edu${href}`;
+                    }
+                    return (
+                        <a
+                            key={i}
+                            href={href || "#"}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="badge bg-light border text-truncate"
+                            style={{
+                                maxWidth: 340,
+                                textDecoration: "none",
+                                padding: "0.45rem 0.6rem",
+                                color: "#333",
+                            }}
+                        >
+                            {String(s).slice(0, 80)}
+                        </a>
+                    );
+                })}
+                {sources.length > 2 && (
+                    <button
+                        className="btn btn-sm btn-outline-secondary"
+                        style={{
+                            padding: "0.15rem 0.5rem",
+                            fontSize: "0.75rem",
+                            borderRadius: "999px",
+                        }}
+                        onClick={() => setExpanded(!expanded)}
+                    >
+                        {expanded ? "Show less" : `+${sources.length - 2} more`}
+                    </button>
+                )}
+            </div>
+        );
+    }
+
     return (
-        <div className="main-content" style={{ marginLeft: 260 }}>
-            <header className="d-flex align-items-center justify-content-between p-3 text-white shadow-sm" style={{ background: THEME_GRADIENT }}>
+        <div className="main-content">
+            <header
+                className="d-flex align-items-center justify-content-between p-3 text-white shadow-sm"
+                style={{ background: THEME_GRADIENT }}
+            >
                 <h5 className="m-0 fw-semibold">Review Chat</h5>
             </header>
 
@@ -610,14 +689,21 @@ function ReviewPanel() {
                                 {sessions.map((s) => (
                                     <button
                                         key={s.sid}
-                                        className={`list-group-item list-group-item-action ${selectedSid === s.sid ? "active" : ""}`}
+                                        className={`list-group-item list-group-item-action ${selectedSid === s.sid ? "active" : ""
+                                            }`}
                                         onClick={() => openSession(s.sid)}
                                     >
                                         <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                            <div style={{ fontSize: 12 }}><code>{s.sid}</code></div>
-                                            <div style={{ fontSize: 12 }} className="text-muted">{s.count ?? 0} msgs</div>
+                                            <div style={{ fontSize: 12 }}>
+                                                <code>{s.sid}</code>
+                                            </div>
+                                            <div style={{ fontSize: 12 }} className="text-muted">
+                                                {s.count ?? 0} msgs
+                                            </div>
                                         </div>
-                                        <div style={{ fontSize: 11 }} className="text-muted">{s.updatedAt ? new Date(s.updatedAt).toLocaleString() : ""}</div>
+                                        <div style={{ fontSize: 11 }} className="text-muted">
+                                            {s.updatedAt ? new Date(s.updatedAt).toLocaleString() : ""}
+                                        </div>
                                     </button>
                                 ))}
                                 {!sessions.length && <div className="text-muted p-3">No sessions.</div>}
@@ -625,16 +711,32 @@ function ReviewPanel() {
                         </div>
 
                         <div className="d-flex gap-2 mt-2">
-                            <button className="btn btn-outline-secondary" disabled={skip === 0} onClick={() => fetchSessions(Math.max(skip - limit, 0))}>Prev</button>
-                            <div className="small text-muted">{skip + 1}–{Math.min(skip + limit, total)} of {total}</div>
-                            <button className="btn btn-outline-secondary" disabled={skip + limit >= total} onClick={() => fetchSessions(skip + limit)}>Next</button>
+                            <button
+                                className="btn btn-outline-secondary"
+                                disabled={skip === 0}
+                                onClick={() => fetchSessions(Math.max(skip - limit, 0))}
+                            >
+                                Prev
+                            </button>
+                            <div className="small text-muted">
+                                {skip + 1}–{Math.min(skip + limit, total)} of {total}
+                            </div>
+                            <button
+                                className="btn btn-outline-secondary"
+                                disabled={skip + limit >= total}
+                                onClick={() => fetchSessions(skip + limit)}
+                            >
+                                Next
+                            </button>
                         </div>
                     </div>
 
                     <div className="col-8">
                         {!sessionDetail && (
                             <div className="card p-4 shadow-sm">
-                                <div className="text-muted">Select a session to review assistant messages.</div>
+                                <div className="text-muted">
+                                    Select a session to review assistant messages.
+                                </div>
                             </div>
                         )}
 
@@ -642,151 +744,204 @@ function ReviewPanel() {
                             <div className="card p-3 shadow-sm">
                                 <div className="d-flex justify-content-between align-items-center mb-2">
                                     <strong>Session: {sessionDetail.sid}</strong>
-                                    <button className="btn btn-sm btn-light" onClick={() => { setSessionDetail(null); setSelectedSid(null); }}>Close</button>
+                                    <button
+                                        className="btn btn-sm btn-light"
+                                        onClick={() => {
+                                            setSessionDetail(null);
+                                            setSelectedSid(null);
+                                        }}
+                                    >
+                                        Close
+                                    </button>
                                 </div>
 
                                 <div style={{ maxHeight: 520, overflow: "auto" }}>
-                                    {(sessionDetail.history || []).filter(h => h.role === "assistant").map((m, idx) => {
-                                        const idKey = m.mid ?? idx;
+                                    {(sessionDetail.history || [])
+                                        .filter((h) => h.role === "assistant")
+                                        .map((m, idx) => {
+                                            const idKey = m.mid ?? idx;
 
-                                        // find the closest preceding user question (fallback to assistant content if not found)
-                                        let questionToShow = m.content || "";
-                                        if (sessionDetail?.history && sessionDetail.history.length) {
-                                            const all = sessionDetail.history;
-                                            const pos = all.findIndex(x => (x.mid ?? String(x.ts)) === (m.mid ?? String(m.ts)));
-                                            if (pos !== -1) {
-                                                for (let j = pos - 1; j >= 0; j--) {
-                                                    const cand = all[j];
-                                                    if (cand.role === "user" && cand.content && cand.content.trim()) {
-                                                        questionToShow = cand.content;
-                                                        break;
+                                            let questionToShow = m.content || "";
+                                            if (sessionDetail?.history?.length) {
+                                                const all = sessionDetail.history;
+                                                const pos = all.findIndex(
+                                                    (x) =>
+                                                        (x.mid ?? String(x.ts)) ===
+                                                        (m.mid ?? String(m.ts))
+                                                );
+                                                if (pos !== -1) {
+                                                    for (let j = pos - 1; j >= 0; j--) {
+                                                        const cand = all[j];
+                                                        if (
+                                                            cand.role === "user" &&
+                                                            cand.content &&
+                                                            cand.content.trim()
+                                                        ) {
+                                                            questionToShow = cand.content;
+                                                            break;
+                                                        }
                                                     }
                                                 }
                                             }
-                                        }
 
-                                        // element ids (unique) for corrected answer + force checkbox
-                                        const corrId = `corr-${idKey}`;
-                                        const forceId = `force-${idKey}`;
+                                            const corrId = `corr-${idKey}`;
+                                            const forceId = `force-${idKey}`;
 
-                                        // normalize sources into an array
-                                        let sources = [];
-                                        if (Array.isArray(m.sources)) sources = m.sources;
-                                        else if (typeof m.sources === "string" && m.sources.trim()) {
-                                            // if the string looks like comma-separated, try to split, otherwise single element
-                                            if (m.sources.includes(",")) sources = m.sources.split(",").map(s => s.trim()).filter(Boolean);
-                                            else sources = [m.sources];
-                                        } else if (m.sources && typeof m.sources === "object") {
-                                            // some older entries may store sources in nested shapes; fallback to JSON string
-                                            try { sources = JSON.parse(JSON.stringify(m.sources)); } catch (e) { sources = []; }
-                                            if (!Array.isArray(sources)) sources = [String(m.sources)];
-                                        }
+                                            let sources = [];
+                                            if (Array.isArray(m.sources)) sources = m.sources;
+                                            else if (typeof m.sources === "string" && m.sources.trim()) {
+                                                if (m.sources.includes(","))
+                                                    sources = m.sources
+                                                        .split(",")
+                                                        .map((s) => s.trim())
+                                                        .filter(Boolean);
+                                                else sources = [m.sources];
+                                            } else if (m.sources && typeof m.sources === "object") {
+                                                try {
+                                                    sources = JSON.parse(JSON.stringify(m.sources));
+                                                } catch {
+                                                    sources = [];
+                                                }
+                                                if (!Array.isArray(sources))
+                                                    sources = [String(m.sources)];
+                                            }
 
-                                        return (
-                                            <div key={idKey} className="mb-3 border-bottom pb-2">
-                                                <div className="text-muted small mb-1">
-                                                    {m.ts ? new Date(m.ts).toLocaleString() : ""}
-                                                </div>
+                                            return (
+                                                <div key={idKey} className="mb-3 border-bottom pb-2">
+                                                    <div className="text-muted small mb-1">
+                                                        {m.ts
+                                                            ? new Date(m.ts).toLocaleString()
+                                                            : ""}
+                                                    </div>
 
-                                                {/* Question (read-only) */}
-                                                <div style={{ whiteSpace: "pre-wrap" }} className="mb-2 mt-2">
-                                                    <b>Question:</b><br />
-                                                    {questionToShow}
-                                                </div>
-                                                {/* Assistant answer */}
-                                                <div style={{ whiteSpace: "pre-wrap" }} className="mb-2 mt-2">
-                                                    <b>Assistant answer:</b><br />
-                                                    {m.content}
-                                                </div>
+                                                    <div
+                                                        style={{ whiteSpace: "pre-wrap" }}
+                                                        className="mb-2 mt-2"
+                                                    >
+                                                        <b>Question:</b>
+                                                        <br />
+                                                        {questionToShow}
+                                                    </div>
 
-                                                {/* Resources / sources (after the answer) */}
-                                                <div className="mb-3">
-                                                    <label className="form-label small">Resources:</label>
-                                                    <div className="d-flex flex-wrap gap-2">
-                                                        {sources.length === 0 && <div className="text-muted small">No resources recorded.</div>}
-                                                        {sources.map((s, i) => {
-                                                            // make a usable href
-                                                            let href = String(s || "").trim();
-                                                            // If source is relative / path, try to keep as-is
-                                                            if (href && !/^https?:\/\//i.test(href)) {
-                                                                // If it looks like a path (starts with "/") make it absolute to law.temple.edu for convenience
-                                                                if (href.startsWith("/")) href = `https://law.temple.edu${href}`;
-                                                                // else leave the string as-is
-                                                            }
-                                                            return (
-                                                                <a
-                                                                    key={i}
-                                                                    href={href || "#"}
-                                                                    target="_blank"
-                                                                    rel="noreferrer"
-                                                                    className="badge bg-light border text-truncate"
-                                                                    style={{ maxWidth: 340, textDecoration: "none", padding: "0.45rem 0.6rem", color: "#333" }}
-                                                                >
-                                                                    {String(s).slice(0, 80)}
-                                                                </a>
-                                                            );
-                                                        })}
+                                                    <div
+                                                        style={{ whiteSpace: "pre-wrap" }}
+                                                        className="mb-2 mt-2"
+                                                    >
+                                                        <b>Assistant answer:</b>
+                                                        <br />
+                                                        {m.content}
+                                                    </div>
+
+                                                    <div className="mb-3">
+                                                        <label className="form-label small">
+                                                            Resources:
+                                                        </label>
+                                                        <ResourceList sources={sources} />
+                                                    </div>
+
+                                                    <label className="form-label small">
+                                                        Corrected answer (admin-only):
+                                                    </label>
+                                                    <textarea
+                                                        id={corrId}
+                                                        className="form-control mb-2"
+                                                        rows={4}
+                                                        placeholder="Enter corrected canonical answer here..."
+                                                    />
+
+                                                    <div className="form-check mb-2">
+                                                        <input
+                                                            className="form-check-input"
+                                                            type="checkbox"
+                                                            id={forceId}
+                                                        />
+                                                        <label
+                                                            className="form-check-label small"
+                                                            htmlFor={forceId}
+                                                        >
+                                                            Force override (use this answer even if
+                                                            website has an entry)
+                                                        </label>
+                                                    </div>
+
+                                                    <div className="d-flex gap-2">
+                                                        <button
+                                                            className="btn btn-sm btn-outline-success"
+                                                            onClick={async () => {
+                                                                const questionValue =
+                                                                    questionToShow?.trim() || "";
+                                                                const corrected =
+                                                                    document
+                                                                        .getElementById(corrId)
+                                                                        ?.value?.trim() || "";
+                                                                const force = !!(
+                                                                    document.getElementById(
+                                                                        forceId
+                                                                    ) &&
+                                                                    document.getElementById(forceId)
+                                                                        .checked
+                                                                );
+                                                                if (!questionValue || !corrected)
+                                                                    return alert(
+                                                                        "Please provide both question and corrected answer before saving."
+                                                                    );
+
+                                                                try {
+                                                                    await saveCorrectedAnswer(
+                                                                        questionValue,
+                                                                        corrected,
+                                                                        {
+                                                                            force,
+                                                                            sid: sessionDetail?.sid,
+                                                                            assistantMid: m.mid,
+                                                                            assistantContent: m.content,
+                                                                        }
+                                                                    );
+                                                                    const t =
+                                                                        document.getElementById(
+                                                                            corrId
+                                                                        );
+                                                                    if (t) t.value = "";
+                                                                    const f =
+                                                                        document.getElementById(
+                                                                            forceId
+                                                                        );
+                                                                    if (f) f.checked = false;
+                                                                } catch (err) {
+                                                                    alert(
+                                                                        "Save failed: " +
+                                                                        (err?.message || err)
+                                                                    );
+                                                                }
+                                                            }}
+                                                        >
+                                                            Save Corrected Answer
+                                                        </button>
+
+                                                        <button
+                                                            className="btn btn-sm btn-outline-secondary"
+                                                            onClick={() => {
+                                                                const t =
+                                                                    document.getElementById(corrId);
+                                                                const f =
+                                                                    document.getElementById(forceId);
+                                                                if (t) t.value = "";
+                                                                if (f) f.checked = false;
+                                                            }}
+                                                        >
+                                                            Clear
+                                                        </button>
                                                     </div>
                                                 </div>
-
-                                                {/* Corrected answer + force */}
-                                                <label className="form-label small">Corrected answer (admin-only):</label>
-                                                <textarea id={corrId} className="form-control mb-2" rows={4} placeholder="Enter corrected canonical answer here..." />
-
-                                                <div className="form-check mb-2">
-                                                    <input className="form-check-input" type="checkbox" id={forceId} />
-                                                    <label className="form-check-label small" htmlFor={forceId}>
-                                                        Force override (use this answer even if website has an entry)
-                                                    </label>
-                                                </div>
-
-                                                <div className="d-flex gap-2">
-                                                    <button
-                                                        className="btn btn-sm btn-outline-success"
-                                                        onClick={async () => {
-                                                            const questionValue = questionToShow?.trim() || "";
-                                                            const corrected = document.getElementById(corrId)?.value?.trim() || "";
-                                                            const force = !!(document.getElementById(forceId) && document.getElementById(forceId).checked);
-                                                            if (!questionValue || !corrected) return alert("Please provide both question and corrected answer before saving.");
-
-                                                            try {
-                                                                await saveCorrectedAnswer(questionValue, corrected, {
-                                                                    force,
-                                                                    sid: sessionDetail?.sid,
-                                                                    assistantMid: m.mid,
-                                                                    assistantContent: m.content
-                                                                });
-                                                                // clear corrected textarea but keep question display
-                                                                const t = document.getElementById(corrId);
-                                                                if (t) t.value = "";
-                                                                const f = document.getElementById(forceId);
-                                                                if (f) f.checked = false;
-                                                            } catch (err) {
-                                                                alert("Save failed: " + (err?.message || err));
-                                                            }
-                                                        }}
-                                                    >
-                                                        Save Corrected Answer
-                                                    </button>
-
-                                                    <button
-                                                        className="btn btn-sm btn-outline-secondary"
-                                                        onClick={() => {
-                                                            const t = document.getElementById(corrId);
-                                                            const f = document.getElementById(forceId);
-                                                            if (t) t.value = "";
-                                                            if (f) f.checked = false;
-                                                        }}
-                                                    >
-                                                        Clear
-                                                    </button>
-                                                </div>
+                                            );
+                                        })}
+                                    {!(
+                                        sessionDetail.history || []
+                                    ).some((h) => h.role === "assistant") && (
+                                            <div className="text-muted">
+                                                No assistant messages in this session.
                                             </div>
-                                        );
-                                    })}
-                                    {!(sessionDetail.history || []).some(h => h.role === "assistant") && (
-                                        <div className="text-muted">No assistant messages in this session.</div>
-                                    )}
+                                        )}
                                 </div>
                             </div>
                         )}
@@ -796,6 +951,7 @@ function ReviewPanel() {
         </div>
     );
 }
+
 
 
 
@@ -830,7 +986,7 @@ function ModelSettings() {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "x-admin-token": ADMIN_TOKEN
+                    "Authorization": `Bearer ${TOKEN}`
                 },
                 body: JSON.stringify({ q: question.trim(), models: [modelA, modelB, modelC] })
             });
@@ -848,7 +1004,7 @@ function ModelSettings() {
     }
 
     return (
-        <div className="main-content" style={{ marginLeft: 260 }}>
+        <div className="main-content" >
             <header className="d-flex align-items-center justify-content-between p-3 text-white shadow-sm" style={{ background: THEME_GRADIENT }}>
                 <h5 className="m-0 fw-semibold">Model Settings & Comparison</h5>
             </header>
@@ -890,7 +1046,7 @@ function ModelSettings() {
                             <label className="form-label small">Test question for comparison</label>
                             <textarea className="form-control mb-2" value={question} onChange={(e) => setQuestion(e.target.value)} rows={3} placeholder="Type a question to compare the selected models..." />
                             <div className="d-flex gap-2">
-                                <button className="btn btn-primary" disabled={loading} onClick={compareNow}>
+                                <button className="btn btn-outline-primary" disabled={loading} onClick={compareNow}>
                                     {loading ? "Comparing…" : "Compare models"}
                                 </button>
                                 <button className="btn btn-outline-secondary" onClick={() => { setQuestion(""); setResults(null); }}>
@@ -941,17 +1097,218 @@ function ModelSettings() {
 }
 
 
+function SuperAdminPanel() {
+    const [users, setUsers] = useState([]);
+    const [form, setForm] = useState({ username: "", password: "", role: "admin" });
+    const [editing, setEditing] = useState(null);
+    const TOKEN = localStorage.getItem("jwt_token");
+    const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8790";
+
+    // Fetch users
+    async function loadUsers() {
+        const r = await fetch(`${API_BASE}/admin/users`, {
+            headers: { Authorization: `Bearer ${TOKEN}` },
+        });
+        const data = await r.json();
+        setUsers(data || []);
+    }
+
+    useEffect(() => {
+        loadUsers();
+    }, []);
+
+    // Create or update user
+    async function saveUser() {
+        if (!form.username || (!form.password && !editing)) {
+            alert("Username and password are required for new users.");
+            return;
+        }
+
+        const method = editing ? "PATCH" : "POST";
+        const url = editing
+            ? `${API_BASE}/admin/users/${encodeURIComponent(editing.username)}`
+            : `${API_BASE}/admin/users`;
+
+        const res = await fetch(url, {
+            method,
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${TOKEN}`,
+            },
+            body: JSON.stringify(form),
+        });
+
+        const j = await res.json();
+        if (res.ok && j.ok) {
+            alert(editing ? "User updated successfully." : "User created successfully.");
+            setForm({ username: "", password: "", role: "admin" });
+            setEditing(null);
+            loadUsers();
+        } else {
+            alert("Error: " + (j.error || res.statusText));
+        }
+    }
+
+    // Delete user
+    async function deleteUser(username) {
+        if (!window.confirm(`Delete user "${username}"?`)) return;
+        const res = await fetch(`${API_BASE}/admin/users/${encodeURIComponent(username)}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${TOKEN}` },
+        });
+        const j = await res.json();
+        if (j.ok) {
+            alert("User deleted.");
+            loadUsers();
+        } else {
+            alert("Error deleting user: " + (j.error || res.statusText));
+        }
+    }
+
+    return (
+        <div className="main-content" >
+            <header
+                className="d-flex align-items-center justify-content-between p-3 text-white shadow-sm"
+                style={{ background: "linear-gradient(90deg, #7b1e1e 0%, #34495e 100%)" }}
+            >
+                <h5 className="m-0 fw-semibold">User Management</h5>
+            </header>
+
+            <div className="container-fluid p-4">
+                <div className="card shadow-sm border-0 rounded-4 p-3 mb-4">
+                    <h6>{editing ? "Edit User" : "Add New User"}</h6>
+                    <div className="row g-3 mt-1">
+                        <div className="col-md-3">
+                            <input
+                                className="form-control"
+                                placeholder="Username"
+                                value={form.username}
+                                disabled={!!editing}
+                                onChange={(e) => setForm({ ...form, username: e.target.value })}
+                            />
+                        </div>
+                        <div className="col-md-3">
+                            <input
+                                type="password"
+                                className="form-control"
+                                placeholder={editing ? "New Password (optional)" : "Password"}
+                                value={form.password}
+                                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                            />
+                        </div>
+                        <div className="col-md-3">
+                            <select
+                                className="form-select"
+                                value={form.role}
+                                onChange={(e) => setForm({ ...form, role: e.target.value })}
+                            >
+                                <option value="admin">admin</option>
+                                <option value="reviewer">reviewer</option>
+                                <option value="superadmin">superadmin</option>
+                            </select>
+                        </div>
+                        <div className="col-md-3 d-flex gap-2">
+                            <button className="btn btn-success w-50" onClick={saveUser}>
+                                {editing ? "Update" : "Add"}
+                            </button>
+                            {editing && (
+                                <button
+                                    className="btn btn-secondary w-50"
+                                    onClick={() => {
+                                        setEditing(null);
+                                        setForm({ username: "", password: "", role: "admin" });
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="card border-0 shadow-sm rounded-4">
+                    <div className="table-responsive p-3">
+                        <table className="table table-hover align-middle mb-0">
+                            <thead style={{ backgroundColor: "#f1f3f5" }}>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Role</th>
+                                    <th>Created</th>
+                                    <th style={{ width: 200 }}>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {users.map((u) => (
+                                    <tr key={u.username}>
+                                        <td>{u.username}</td>
+                                        <td>{u.role}</td>
+                                        <td>{new Date(u.createdAt).toLocaleString()}</td>
+                                        <td>
+                                            <div className="d-flex gap-2">
+                                                <button
+                                                    className="btn btn-sm btn-outline-primary"
+                                                    onClick={() => {
+                                                        setEditing(u);
+                                                        setForm({ username: u.username, password: "", role: u.role });
+                                                    }}
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    className="btn btn-sm btn-outline-danger"
+                                                    onClick={() => deleteUser(u.username)}
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {!users.length && (
+                                    <tr>
+                                        <td colSpan="4" className="text-center text-muted">
+                                            No users found.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+
+
 
 // ---------------- Main Admin ----------------
 export default function Admin() {
     const [active, setActive] = useState("history");
+    const ROLE = localStorage.getItem("role");
+
     return (
-        <div className="d-flex bg-light">
+        <div className="d-flex bg-light" style={{ minHeight: "100vh" }}>
             <Sidebar active={active} setActive={setActive} />
-            {active === "history" && <ChatHistory />}
-            {active === "review" && <ReviewPanel />}
-            {active === "overrides" && <OverridesPanel />}
-            {active === "models" && <ModelSettings />}
+
+            <div className="flex-fill bg-light">
+                {/* right content area */}
+                <div
+                    className="shadow-sm"
+                    style={{
+                        minHeight: "100vh",
+                        backgroundColor: "#f8f9fa",
+                        borderRadius: "0px",
+                    }}
+                >
+                    {active === "history" && <ChatHistory />}
+                    {active === "review" && <ReviewPanel />}
+                    {active === "overrides" && <OverridesPanel />}
+                    {active === "models" && <ModelSettings />}
+                    {active === "users" && ROLE === "superadmin" && <SuperAdminPanel />}
+                </div>
+            </div>
         </div>
     );
 }

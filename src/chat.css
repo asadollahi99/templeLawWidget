@@ -574,6 +574,160 @@ body {
     min-width: 0;
 }
 
+/* Limit long columns in tables */
+.table td code,
+.table td span,
+.table td div {
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* Let tooltips show full content */
+.table td[title] {
+    cursor: help;
+}
+
+/* Keep the sidebar a fixed width and shift the main pane */
+.sidebar-fixed {
+    width: 250px;
+}
+
+.main-content {
+    margin-left: 250px;
+    /* creates the consistent left gutter beside the fixed sidebar */
+}
+
+/* -----------------------------
+   Fix invisible hover on outline buttons
+------------------------------ */
+.btn-outline-primary:hover {
+    background-color: #7b1e1e !important;
+    /* Temple red */
+    color: #fff !important;
+    border-color: #7b1e1e !important;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #495057 !important;
+    color: #fff !important;
+    border-color: #495057 !important;
+}
+
+.btn-outline-danger:hover {
+    background-color: #a60e0e !important;
+    color: #fff !important;
+    border-color: #a60e0e !important;
+}
+
+.btn-outline-success:hover {
+    background-color: #198754 !important;
+    color: #fff !important;
+    border-color: #198754 !important;
+}
+
+.btn-outline-info:hover {
+    background-color: #0dcaf0 !important;
+    color: #fff !important;
+    border-color: #0dcaf0 !important;
+}
+
+.btn-outline-warning:hover {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+    border-color: #ffc107 !important;
+}
+
+/* Fix hover colors for all outline buttons - keep their correct theme color */
+.btn-outline-primary:hover {
+    background-color: #0d6efd !important;
+    /* Bootstrap blue */
+    color: #fff !important;
+    border-color: #0d6efd !important;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d !important;
+    /* gray */
+    color: #fff !important;
+    border-color: #6c757d !important;
+}
+
+.btn-outline-danger:hover {
+    background-color: #dc3545 !important;
+    /* red */
+    color: #fff !important;
+    border-color: #dc3545 !important;
+}
+
+.btn-outline-success:hover {
+    background-color: #198754 !important;
+    /* green */
+    color: #fff !important;
+    border-color: #198754 !important;
+}
+
+.btn-outline-warning:hover {
+    background-color: #ffc107 !important;
+    /* yellow */
+    color: #212529 !important;
+    border-color: #ffc107 !important;
+}
+
+.btn-outline-info:hover {
+    background-color: #0dcaf0 !important;
+    /* light blue */
+    color: #fff !important;
+    border-color: #0dcaf0 !important;
+}
+
+.btn-outline-dark:hover {
+    background-color: #212529 !important;
+    /* blackish */
+    color: #fff !important;
+    border-color: #212529 !important;
+}
+
+/* Smooth hover transition */
+.btn {
+    transition: all 0.15s ease-in-out;
+}
+
+/* Fix hover and disabled look for normal Bootstrap buttons */
+.btn-success {
+    background-color: #198754 !important;
+    color: #fff !important;
+    border-color: #198754 !important;
+}
+
+.btn-success:hover {
+    background-color: #157347 !important;
+    border-color: #146c43 !important;
+    color: #fff !important;
+}
+
+.btn-secondary {
+    background-color: #6c757d !important;
+    color: #fff !important;
+    border-color: #6c757d !important;
+}
+
+.btn-secondary:hover {
+    background-color: #5c636a !important;
+    border-color: #565e64 !important;
+    color: #fff !important;
+}
+
+/* Mobile: stack the sidebar above the content */
+@media (max-width: 991.98px) {
+    .main-content {
+        margin-left: 0;
+    }
+}
+
 @keyframes blink {
 
     0%,

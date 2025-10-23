@@ -155,7 +155,7 @@ export default function App() {
               className="btn btn-light btn-sm"
               onClick={reset}
             >
-              Reset
+              New Chat
             </button>
           </div>
         </header>
